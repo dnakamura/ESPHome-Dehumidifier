@@ -27,14 +27,14 @@ static void v1_start_handshake(MideaDehumComponent* self) {
   switch (self->get_handshake_step()) {
     case 0:
       // Send dongleAnnounce, advance to step 1
-      LOGD(TAG, "Handshake step 0: sending dongleAnnounce");
+      ESP_LOGD(TAG, "Handshake step 0: sending dongleAnnounce");
       self->write_array(dongleAnnounce_v1, sizeof(dongleAnnounce_v1));
       self->set_handshake_step(1);
       break;
 
     case 1: {
       // Send network status message (0xA0)
-      LOGD(TAG, "Handshake step 1: sending network status message (0xA0)");
+      ESP_LOGD(TAG, "Handshake step 1: sending network status message (0xA0)");
       uint8_t payload[19];
       memset(payload, 0, sizeof(payload));
       self->sendMessage(0xA0, 0x08, 0xBF, 19, payload);
@@ -43,7 +43,7 @@ static void v1_start_handshake(MideaDehumComponent* self) {
     }
 
     case 2:
-      LOGD(TAG, "Handshake step 2: sending status query");
+      ESP_LOGD(TAG, "Handshake step 2: sending status query");
       // Update and send network status (connected)
       self->updateAndSendNetworkStatus(true);
       break;
@@ -83,7 +83,7 @@ static bool v1_on_message(MideaDehumComponent* self, uint8_t* data, size_t len) 
 
   // UART ping — echo back and mark handshake done
   if (data[9] == 0x05 && !self->get_handshake_done()) {
-    LOGD(TAG, "Handshake step 3: received ping, echoing back and marking handshake done");
+    ESP_LOGD(TAG, "Handshake step 3: received ping, echoing back and marking handshake done");
     self->write_array(data, len);
     self->set_handshake_done(true);
     App.scheduler.set_timeout(self, "post_handshake_init", 1500, [self]() { self->getStatus(); });
