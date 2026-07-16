@@ -86,6 +86,7 @@ void MideaDehumComponent::loop() {
   static uint32_t last_status_poll = 0;
   uint32_t now                     = millis();
   if (now - last_status_poll >= this->status_poll_interval_) {
+    ESP_LOGD(TAG, "Polling status");
     last_status_poll = now;
     this->getStatus();
   }
