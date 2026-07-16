@@ -685,12 +685,14 @@ void MideaDehumComponent::writeHeader(uint8_t msgType, uint8_t agreementVersion,
 void MideaDehumComponent::performHandshakeStep() {
   switch (this->handshake_step_) {
     case 0: {
+      ESP_LOGD(TAG, "TX Handshake Step 0: Announce Dongle");
       this->write_array(dongleAnnounce, sizeof(dongleAnnounce));
       this->handshake_step_ = 1;
       break;
     }
 
     case 1: {
+      ESP_LOGD(TAG, "TX Handshake Step 1: Send Dongle Info");
       uint8_t payloadLength = 19;
       uint8_t payload[19];
       memset(payload, 0, sizeof(payload));
@@ -702,6 +704,7 @@ void MideaDehumComponent::performHandshakeStep() {
     }
 
     case 2: {
+      ESP_LOGD(TAG, "TX Handshake Step 2: Update and Send Network Status");
       this->updateAndSendNetworkStatus(true);
       break;
     }
@@ -713,13 +716,17 @@ void MideaDehumComponent::performHandshakeStep() {
 #endif
 // Process of the RX Packet received
 void MideaDehumComponent::processPacket(uint8_t *data, size_t len) {
-  // Pretty print packet
-  std::string hex_str;
-  hex_str.reserve(len * 3);
-  for (size_t i = 0; i < len; i++) {
-    char buf[4];
-    snprintf(buf, sizeof(buf), "%02X ", data[i]);
-    hex_str += buf;
+  // Pretty print packet — only build the hex string when DEBUG logging is on
+  // to avoid a heap allocation on every received frame in production builds.
+  if (esp_log_level_get(TAG) >= ESP_LOG_DEBUG) {
+    std::string hex_str;
+    hex_str.reserve(len * 3);
+    for (size_t i = 0; i < len; i++) {
+      char buf[4];
+      snprintf(buf, sizeof(buf), "%02X ", data[i]);
+      hex_str += buf;
+    }
+    ESP_LOGD(TAG, "RX (%zu bytes): %s", len, hex_str.c_str());
   }
   // State response
   if (data[10] == 0xC8) {
