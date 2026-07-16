@@ -617,6 +617,7 @@ void MideaDehumComponent::loop() {
   uint32_t now = millis();
   if (now - last_status_poll >= this->status_poll_interval_) {
     last_status_poll = now;
+    ESP_LOGD(TAG, "Polling device status");
     this->getStatus();
   }
 }
@@ -766,7 +767,7 @@ void MideaDehumComponent::processPacket(uint8_t *data, size_t len) {
   else if (data[9] == 0x05 && !this->handshake_done_) {
     this->write_array(data, data[1] + 1);
     this->handshake_done_ = true;
-    
+    ESP_LOGD(TAG, "Handshake complete");
     App.scheduler.set_timeout(this, "post_handshake_init", 1500, [this]() {
       this->getStatus();
     });
