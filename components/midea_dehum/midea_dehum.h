@@ -179,6 +179,9 @@ class MideaDehumComponent : public climate::Climate,
   void set_filter_cleaned_flag(bool flag) { this->filter_cleaned_flag_ = flag; }
   bool is_filter_request_active() const { return this->filter_request_state_; }
 #endif
+#ifdef USE_MIDEA_RESET_PROTOCOL_BUTTON
+  void set_reset_protocol_button(MideaResetProtocolButton *b);
+#endif
 #ifdef USE_MIDEA_DEHUM_ION
   void set_ion_switch(MideaIonSwitch *s);
   void set_ion_state(bool on);
