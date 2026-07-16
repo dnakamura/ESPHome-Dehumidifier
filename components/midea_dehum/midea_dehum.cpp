@@ -137,6 +137,20 @@ void MideaFilterCleanedButton::press_action() {
 }
 #endif
 
+#ifdef USE_MIDEA_RESET_PROTOCOL_BUTTON
+void MideaDehumComponent::set_reset_protocol_button(MideaResetProtocolButton *b) {
+  this->reset_protocol_button_ = b;
+  if (auto *btn = dynamic_cast<MideaResetProtocolButton *>(b)) {
+    btn->set_parent(this);
+  }
+}
+
+void MideaResetProtocolButton::press_action() {
+  if (this->parent_ == nullptr) return;
+  this->parent_->reset_protocol();
+}
+#endif
+
 // Device IONizer
 #ifdef USE_MIDEA_DEHUM_ION
 void MideaDehumComponent::set_ion_state(bool on) {
@@ -593,6 +607,25 @@ void MideaDehumComponent::setup() {
 #endif
 }
 
+void MideaDehumComponent::reset_protocol() {
+  rx_len = 0;
+  #ifdef USE_MIDEA_DEHUM_HANDSHAKE
+  if (this->handshake_enabled_) {
+    this->handshake_step_ = 0;
+    this->handshake_done_ = false;
+    App.scheduler.set_timeout(this, "start_handshake", 2000, [this]() {
+      this->performHandshakeStep();
+    });
+  } else {
+    this->handshake_step_ = 2;
+    this->handshake_done_ = true;
+  }
+  #else
+  this->updateAndSendNetworkStatus(false);
+  #endif
+  this->
+}
+
 void MideaDehumComponent::loop() {
   this->handleUart();
   
@@ -629,7 +662,6 @@ void MideaDehumComponent::clearTxBuf() { memset(serialTxBuf, 0, sizeof(serialTxB
 void MideaDehumComponent::handleUart() {
   if (!this->uart_) return;
 
-  static size_t rx_len = 0;
 
   while (this->uart_->available()) {
     uint8_t byte_in;
@@ -687,7 +719,7 @@ void MideaDehumComponent::performHandshakeStep() {
   switch (this->handshake_step_) {
     case 0: {
       ESP_LOGD(TAG, "TX Handshake Step 0: Announce Dongle");
-      this->write_array(dongleAnnounce, sizeof(dongleAnnounce));
+      this->write_packet(dongleAnnounce, sizeof(dongleAnnounce));
       this->handshake_step_ = 1;
       break;
     }
@@ -765,7 +797,7 @@ void MideaDehumComponent::processPacket(uint8_t *data, size_t len) {
   }
   // Requested UART ping
   else if (data[9] == 0x05 && !this->handshake_done_) {
-    this->write_array(data, data[1] + 1);
+    this->write_packet(data, data[1] + 1);
     this->handshake_done_ = true;
     ESP_LOGD(TAG, "Handshake complete");
     App.scheduler.set_timeout(this, "post_handshake_init", 1500, [this]() {
@@ -1348,9 +1380,24 @@ void MideaDehumComponent::sendMessage(uint8_t msgType, uint8_t agreementVersion,
 
   const size_t total_len = 10 + payloadLength + 2;
 
-  this->write_array(serialTxBuf, total_len);
+  this->write_packet(serialTxBuf, total_len);
 }
 
+void MideaDehumComponent::write_packet(uint8_t *data, size_t len) {
+  #if ESPHOME_LOG_LEVEL >= ESPHOME_LOG_LEVEL_DEBUG
+  {
+    std::string hex_str;
+    hex_str.reserve(len * 3);
+    for (size_t i = 0; i < len; i++) {
+      char buf[4];
+      snprintf(buf, sizeof(buf), "%02X ", data[i]);
+      hex_str += buf;
+    }
+    ESP_LOGD(TAG, "TX (%zu bytes): %s", len, hex_str.c_str());
+  }
+  #endif
+  this->write_array(data, len);
+}
 // ===== Climate control =======================================================
 void MideaDehumComponent::control(const climate::ClimateCall &call) {
   std::string requestedState = this->state_.powerOn ? "on" : "off";

@@ -44,6 +44,9 @@ class MideaDehumComponent;
 #ifdef USE_MIDEA_DEHUM_FILTER_BUTTON
 class MideaFilterCleanedButton;
 #endif
+#ifdef USE_MIDEA_RESET_PROTOCOL_BUTTON
+class MideaResetProtocolButton;
+#endif
 #ifdef USE_MIDEA_DEHUM_ION
 class MideaIonSwitch;
 #endif
@@ -59,6 +62,17 @@ class MideaSleepSwitch;
 
 #ifdef USE_MIDEA_DEHUM_FILTER_BUTTON
 class MideaFilterCleanedButton : public button::Button, public Component {
+ public:
+  void set_parent(MideaDehumComponent *parent) { this->parent_ = parent; }
+
+ protected:
+  void press_action() override;
+  MideaDehumComponent *parent_{nullptr};
+};
+#endif
+
+#ifdef USE_MIDEA_RESET_PROTOCOL_BUTTON
+class MideaResetProtocolButton : public button::Button, public Component {
  public:
   void set_parent(MideaDehumComponent *parent) { this->parent_ = parent; }
 
@@ -138,6 +152,7 @@ class MideaDehumComponent : public climate::Climate,
  public:
   void set_uart(uart::UARTComponent *uart);
   void set_status_poll_interval(uint32_t interval_ms) { this->status_poll_interval_ = interval_ms; }
+  void write_packet(const uint8_t *data, size_t len);
 #ifdef USE_MIDEA_DEHUM_HANDSHAKE
   void set_handshake_enabled(bool enabled) { this->handshake_enabled_ = enabled; }
 #endif
@@ -201,6 +216,7 @@ class MideaDehumComponent : public climate::Climate,
   void set_timer_hours(float hours, bool from_device);
 #endif
 
+  void reset_protocol();
   std::string display_mode_setpoint_{"Setpoint"};
   std::string display_mode_continuous_{"Continuous"};
   std::string display_mode_smart_{"Smart"};
@@ -297,6 +313,10 @@ class MideaDehumComponent : public climate::Climate,
   button::Button *filter_cleaned_button_{nullptr};
   bool filter_cleaned_flag_{false};
 #endif
+#ifdef USE_MIDEA_RESET_PROTOCOL_BUTTON
+  button::Button *reset_protocol_button_{nullptr};
+  bool reset_protocol_flag_{false};
+#endif
 #ifdef USE_MIDEA_DEHUM_ION
   MideaIonSwitch *ion_switch_{nullptr};
   bool ion_state_{false};
@@ -326,7 +346,7 @@ class MideaDehumComponent : public climate::Climate,
   MideaCapabilitiesTextSensor *capabilities_text_{nullptr};
   bool capabilities_requested_{false};
 #endif
-
+  size_t rx_len{0};
 };
 
 }  // namespace midea_dehum
