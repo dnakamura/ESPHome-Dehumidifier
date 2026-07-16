@@ -623,7 +623,6 @@ void MideaDehumComponent::reset_protocol() {
   #else
   this->updateAndSendNetworkStatus(false);
   #endif
-  this->
 }
 
 void MideaDehumComponent::loop() {
@@ -1383,7 +1382,7 @@ void MideaDehumComponent::sendMessage(uint8_t msgType, uint8_t agreementVersion,
   this->write_packet(serialTxBuf, total_len);
 }
 
-void MideaDehumComponent::write_packet(uint8_t *data, size_t len) {
+void MideaDehumComponent::write_packet(const uint8_t *data, size_t len) {
   #if ESPHOME_LOG_LEVEL >= ESPHOME_LOG_LEVEL_DEBUG
   {
     std::string hex_str;
