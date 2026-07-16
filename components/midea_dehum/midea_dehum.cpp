@@ -718,7 +718,8 @@ void MideaDehumComponent::performHandshakeStep() {
 void MideaDehumComponent::processPacket(uint8_t *data, size_t len) {
   // Pretty print packet — only build the hex string when DEBUG logging is on
   // to avoid a heap allocation on every received frame in production builds.
-  if (esp_log_level_get(TAG) >= ESP_LOG_DEBUG) {
+  #if ESPHOME_LOG_LEVEL >= ESPHOME_LOG_LEVEL_DEBUG
+  {
     std::string hex_str;
     hex_str.reserve(len * 3);
     for (size_t i = 0; i < len; i++) {
@@ -728,6 +729,7 @@ void MideaDehumComponent::processPacket(uint8_t *data, size_t len) {
     }
     ESP_LOGD(TAG, "RX (%zu bytes): %s", len, hex_str.c_str());
   }
+  #endif
   // State response
   if (data[10] == 0xC8) {
     if(!this->device_info_known_){
