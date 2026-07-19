@@ -1,0 +1,4 @@
+name: "midea_dehum_proxy"
+files:
+  - midea_dehum_proxy.cpp
+  - midea_dehum_proxy.h
