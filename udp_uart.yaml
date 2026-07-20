@@ -1,0 +1,45 @@
+esphome:
+  name: midea-dehumidifier-virtual
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+logger:
+
+api:
+
+ota:
+  platform: esphome
+  password: !secret ota_update
+
+external_components:
+  - source:
+      type: local
+      path: components
+    components: [midea_dehum, udp_uart]
+
+udp:
+  id: udp_midea_virtual
+  port:
+    # Must match midea_dehum_proxy's broadcast_port.
+    listen_port: 48900
+    # Must match midea_dehum_proxy's listen_port.
+    broadcast_port: 48899
+  addresses:
+    - 192.168.1.50 # Replace with the proxy ESP's IP address.
+
+udp_uart:
+  id: uart_midea_virtual
+  udp_id: udp_midea_virtual
+  rx_buffer_size: 1024
+
+midea_dehum:
+  id: dehumidifier
+  uart_id: uart_midea_virtual
+  protocol_version: 0
